@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Social | Connect & Share</title>
+  <meta name="description" content="A modern social media platform built for creators and friends.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="auth-container">
+    <div class="auth-card glass">
+      <h2 class="logo">Aura</h2>
+      <p id="auth-title">Welcome back! Please login.</p>
+      
+      <form id="auth-form">
+        <div id="username-group" style="display: none; margin-bottom: 16px;">
+          <input type="text" id="username" placeholder="Username">
+        </div>
+        <div style="margin-bottom: 16px;">
+          <input type="email" id="email" placeholder="Email Address" required>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <input type="password" id="password" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          <span id="auth-btn-text">Login</span>
+        </button>
+      </form>
+      
+      <p style="font-size: 0.9rem;">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <a href="#" id="auth-toggle" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign up</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" style="display: none;">
+    <!-- Sidebar -->
+    <aside class="sidebar glass">
+      <div class="logo">Aura</div>
+      <nav>
+        <a href="#" class="nav-link active" data-page="home">
+          <i class="fas fa-home"></i>
+          <span>Feed</span>
+        </a>
+        <a href="#" class="nav-link" data-page="reels">
+          <i class="fas fa-play"></i>
+          <span>Reels</span>
+        </a>
+        <a href="#" class="nav-link" data-page="explore">
+          <i class="fas fa-hashtag"></i>
+          <span>Explore</span>
+        </a>
+        <a href="#" class="nav-link" data-page="notifications">
+          <i class="fas fa-bell"></i>
+          <span>Notifications</span>
+        </a>
+        <a href="#" class="nav-link" data-page="profile" id="nav-profile">
+          <i class="fas fa-user"></i>
+          <span>Profile</span>
+        </a>
+        <a href="#" class="nav-link" id="admin-nav" data-page="admin" style="display: none;">
+          <i class="fas fa-user-shield"></i>
+          <span>Admin</span>
+        </a>
+        <a href="#" class="nav-link" id="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </nav>
+      
+      <button class="btn btn-primary" id="btn-create-post-sidebar" style="margin-top: 24px;">
+        <i class="fas fa-plus"></i>
+        <span>Create Post</span>
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Home Page -->
+      <section id="page-home" class="page">
+        <div class="create-post glass">
+          <div style="display: flex; gap: 12px;">
+            <div class="avatar">
+              <img src="https://ui-avatars.com/api/?name=User&background=random" alt="User" class="current-user-avatar">
+            </div>
+            <textarea id="post-input" placeholder="What's on your mind?" rows="3"></textarea>
+          </div>
+          
+          <!-- Media Preview Container -->
+          <div id="media-preview-container" style="display: none; position: relative; margin-top: 12px; border-radius: 12px; overflow: hidden;">
+            <div id="media-preview-content"></div>
+            <button id="remove-media" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; z-index: 10;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <div style="display: flex; gap: 16px; color: var(--primary);">
+              <label for="post-media-input" style="cursor: pointer;">
+                <i class="fas fa-image"></i>
+              </label>
+              <input type="file" id="post-media-input" accept="image/*,video/*" style="display: none;">
+              <i class="fas fa-smile" style="cursor: pointer;"></i>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select id="post-type" class="glass" style="padding: 4px 8px; font-size: 0.8rem; width: auto; border-radius: 8px;">
+                <option value="post">Post</option>
+                <option value="reel">Reel</option>
+              </select>
+              <button class="btn btn-primary" id="submit-post">Post</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="feed-container" style="display: flex; flex-direction: column; gap: 24px; margin-top: 24px;">
+          <!-- Posts will be injected here -->
+        </div>
+      </section>
+
+      <!-- Reels Page -->
+      <section id="page-reels" class="page" style="display: none;">
+        <div class="reels-header" style="margin-bottom: 24px;">
+          <h2>Suggested Reels</h2>
+          <p style="color: var(--text-muted);">Trending and recommended for you</p>
+        </div>
+        <div id="reels-container" class="instagram-grid">
+          <!-- Reels will be injected here -->
+        </div>
+      </section>
+
+      <!-- Admin Page -->
+      <section id="page-admin" class="page" style="display: none;">
+        <div class="glass" style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h3>Admin Dashboard - User Management</h3>
+            <span class="badge" id="admin-user-count">0 Users</span>
+          </div>
+          
+          <div class="admin-table-container glass" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+              <thead>
+                <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                  <th style="padding: 12px;">User</th>
+                  <th style="padding: 12px;">Email</th>
+                  <th style="padding: 12px;">Joined</th>
+                  <th style="padding: 12px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-list">
+                <!-- User rows will be injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Explore Page -->
+      <section id="page-explore" class="page" style="display: none;">
+        <div class="search-container glass">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-input" placeholder="Search accounts or posts...">
+        </div>
+        
+        <div class="explore-tabs" style="display: flex; gap: 24px; margin: 24px 0;">
+          <span class="explore-tab active" data-type="posts">Trending</span>
+          <span class="explore-tab" data-type="reels">Reels</span>
+          <span class="explore-tab" data-type="people">People</span>
+        </div>
+
+        <div id="explore-grid" class="instagram-grid">
+          <!-- Grid items will be injected here -->
+        </div>
+      </section>
+
+      <!-- Notifications Page -->
+      <section id="page-notifications" class="page" style="display: none;">
+        <div class="glass" style="padding: 20px;">
+          <h3>Notifications</h3>
+          <div id="notifications-container" style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <!-- Notifications will be injected here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Profile Page -->
+      <section id="page-profile" class="page" style="display: none;">
+        <div class="profile-header glass">
+          <div class="profile-avatar">
+            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profile-img" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid var(--bg-card);">
+          </div>
+          <h2 id="profile-full-name" style="margin-bottom: 2px;">Full Name</h2>
+          <span id="profile-username" style="color: var(--primary); font-weight: 500; font-size: 0.9rem;">@username</span>
+          <p id="profile-bio" style="color: var(--text-muted); margin-top: 8px;">This is your bio. Tell the world about yourself!</p>
+          
+          <div class="profile-stats">
+            <div class="stat-item">
+              <span class="stat-value" id="count-posts">0</span>
+              <span class="stat-label">Posts</span>
+            </div>
+            <div class="stat-item" id="stat-followers" style="cursor: pointer;">
+              <span class="stat-value" id="count-followers">0</span>
+              <span class="stat-label">Followers</span>
+            </div>
+            <div class="stat-item" id="stat-following" style="cursor: pointer;">
+              <span class="stat-value" id="count-following">0</span>
+              <span class="stat-label">Following</span>
+            </div>
+          </div>
+          
+          <div style="margin-top: 24px; display: flex; gap: 12px;">
+            <button class="btn btn-primary" id="edit-profile-btn">Edit Profile</button>
+            <button class="btn btn-outline" id="follow-btn" style="display: none;">Follow</button>
+          </div>
+        </div>
+
+        <div class="profile-tabs" style="display: flex; justify-content: center; border-top: 1px solid var(--glass-border); margin-top: 24px;">
+          <div class="profile-tab active" data-tab="posts"><i class="fas fa-th"></i> POSTS</div>
+          <div class="profile-tab" data-tab="reels"><i class="fas fa-play"></i> REELS</div>
+        </div>
+
+        <div id="user-posts-container" style="display: flex; flex-direction: column; gap: 24px; margin-top: 24px;">
+          <!-- User's posts will be injected here -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="right-sidebar">
+      <div class="trending-card glass">
+        <h3>Trending for you</h3>
+        <div id="trending-container">
+          <!-- Trending items will be injected here -->
+        </div>
+      </div>
+
+      <div class="who-to-follow glass">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0;">Who to follow</h3>
+        </div>
+        
+        <div class="sidebar-search glass" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 16px; font-size: 0.85rem;">
+          <i class="fas fa-search" style="color: var(--text-muted);"></i>
+          <input type="text" id="sidebar-user-search" placeholder="Search people..." style="background: transparent; border: none; padding: 0; font-size: 0.85rem;">
+        </div>
+
+        <div id="suggestions-container">
+          <!-- Suggested users will be injected here -->
+          <div class="follow-item">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div class="avatar" style="width: 40px; height: 40px;">
+                <img src="https://ui-avatars.com/api/?name=Antigravity&background=random" alt="User">
+              </div>
+              <div>
+                <h5 style="font-size: 0.9rem;">Antigravity</h5>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">@antigravity</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">Follow</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Modal System -->
+  <div id="modal-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-card glass" id="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">Edit Profile</h3>
+        <button id="modal-close" class="action-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Dynamic content here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-submit">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" style="position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; background: var(--gradient); color: white; transform: translateY(150%); transition: transform 0.3s ease; z-index: 2000; box-shadow: var(--shadow);">
+    Success message!
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
