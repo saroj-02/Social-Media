@@ -38,15 +38,13 @@ app.get('/api', (req, res) => {
   res.send('Social Media API is running...');
 });
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientBuildPath));
-  // Catch-all: send index.html for any non-API route (client-side routing)
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
-}
+// Serve frontend (plain HTML/CSS/JS - no build needed)
+const clientPath = path.join(__dirname, '..', 'client');
+app.use(express.static(clientPath));
+// Catch-all: serve index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientPath, 'index.html'));
+});
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
