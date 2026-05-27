@@ -38,6 +38,16 @@ app.get('/api', (req, res) => {
   res.send('Social Media API is running...');
 });
 
+// Serve frontend in production
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientBuildPath));
+  // Catch-all: send index.html for any non-API route (client-side routing)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
 // Database Connection
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/social-media';
