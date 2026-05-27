@@ -1,16 +1,18 @@
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Ensure the path is correct relative to the server folder
-    cb(null, path.join(__dirname, '../uploads/'));
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith('video/');
+    return {
+      folder: 'social-media',
+      resource_type: isVideo ? 'video' : 'image',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'avi', 'webm'],
+      transformation: isVideo ? [] : [{ quality: 'auto', fetch_format: 'auto' }],
+    };
   },
-  filename: (req, file, cb) => {
-    // Aggressive sanitization: remove everything except alphanumeric and dots
-    const sanitized = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
-    cb(null, `${Date.now()}-${sanitized}`);
-  }
 });
 
 const fileFilter = (req, file, cb) => {
@@ -28,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB for videos/reels
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 });
 
 module.exports = upload;
