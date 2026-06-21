@@ -42,7 +42,10 @@ app.get('/api', (req, res) => {
 const clientPath = path.join(__dirname, '..', 'client');
 app.use(express.static(clientPath));
 // Catch-all: serve index.html for any non-API route
-app.get('/{*path}', (req, res) => {
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'API route not found' });
+  }
   res.sendFile(path.join(clientPath, 'index.html'));
 });
 
