@@ -19,10 +19,17 @@ router.post('/', protect, (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // If it's a Cloudinary URL, use it directly. Otherwise, construct the local absolute URL.
-    const fileUrl = req.file.path.startsWith('http')
-      ? req.file.path
-      : `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // If it's a Cloudinary URL, use it directly. Otherwise, construct the absolute URL.
+    let fileUrl;
+    if (req.file.path && req.file.path.startsWith('http')) {
+      // Cloudinary URL - use directly but ensure HTTPS
+      fileUrl = req.file.path.replace(/^http:\/\//, 'https://');
+    } else {
+      // Local disk storage - always use HTTPS in production, HTTP locally
+      const isProduction = process.env.NODE_ENV === 'production';
+      const protocol = isProduction ? 'https' : req.protocol;
+      fileUrl = `${protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    }
     res.json({ url: fileUrl });
   });
 });

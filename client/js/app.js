@@ -828,11 +828,10 @@ window.app = {
       document.getElementById('count-followers').textContent = profile.followers.length;
       document.getElementById('count-following').textContent = profile.following.length;
       
-      // Filter posts for this user and tab type
-      if (this.posts.length === 0) {
-        this.posts = await api.getPosts();
-      }
-      const userPosts = this.posts.filter(p => {
+      // Always fetch fresh posts from API for accurate profile display
+      const allPosts = await api.getPosts();
+      this.posts = allPosts;
+      const userPosts = allPosts.filter(p => {
         if (!p.author) return false;
         const authorId = p.author._id || p.author;
         const matchesType = tab === 'reels' ? p.type === 'reel' : p.type === 'post';

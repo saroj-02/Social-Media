@@ -7,3 +7,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        value: mongodb+srv://sarojpadhi28:IBqTzLV0d2TBTuDj@cluster0.n9zjrky.mongodb.net/social-media?retryWrites=true&w=majority&appName=Cluster0
+      - key: JWT_SECRET
+        value: mysecretkey12345
+      - key: CLOUDINARY_CLOUD_NAME
+        value: dohn65ehr
+      - key: CLOUDINARY_API_KEY
+        value: 133656183492788
+      - key: CLOUDINARY_API_SECRET
+        value: t26_ITCW2VynlVGPtJ5Z3DxQH-U
+

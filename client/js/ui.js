@@ -20,9 +20,14 @@ window.ui = {
   getMediaUrl(mediaPath) {
     if (!mediaPath) return '';
     
-    // Upgrade http://social-media-6tlu.onrender.com to HTTPS to prevent mixed content
-    if (mediaPath.startsWith('http://social-media-6tlu.onrender.com')) {
+    // Always upgrade any http:// to https:// to prevent mixed content errors
+    if (mediaPath.startsWith('http://')) {
       return mediaPath.replace(/^http:\/\//, 'https://');
+    }
+    
+    // If already a full HTTPS URL (Cloudinary or absolute), use directly
+    if (mediaPath.startsWith('https://')) {
+      return mediaPath;
     }
     
     // If it is a relative path starting with /uploads or uploads
@@ -34,6 +39,9 @@ window.ui = {
       if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
         return 'https://social-media-6tlu.onrender.com' + cleanPath;
       }
+      
+      // On the deployed server, construct absolute URL
+      return window.location.origin + cleanPath;
     }
     
     return mediaPath;
