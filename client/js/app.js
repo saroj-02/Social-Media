@@ -833,12 +833,13 @@ window.app = {
         this.posts = await api.getPosts();
       }
       const userPosts = this.posts.filter(p => {
+        if (!p.author) return false;
         const authorId = p.author._id || p.author;
         const matchesType = tab === 'reels' ? p.type === 'reel' : p.type === 'post';
         return authorId === userId && matchesType;
       });
       
-      document.getElementById('count-posts').textContent = this.posts.filter(p => (p.author._id || p.author) === userId).length;
+      document.getElementById('count-posts').textContent = this.posts.filter(p => p.author && (p.author._id || p.author) === userId).length;
       
       const container = document.getElementById('user-posts-container');
       if (tab === 'reels') {

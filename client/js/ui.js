@@ -25,10 +25,10 @@ window.ui = {
       <div class="post-card glass" id="post-${post._id}" data-id="${post._id}">
         <div class="post-header">
           <div class="avatar">
-            <img src="${post.author.profilePicture || `https://ui-avatars.com/api/?name=${post.author.username}&background=random`}" alt="${post.author.username}">
+            <img src="${(post.author && post.author.profilePicture) || `https://ui-avatars.com/api/?name=${(post.author && post.author.username) || 'User'}&background=random`}" alt="${(post.author && post.author.username) || 'User'}">
           </div>
           <div class="post-info">
-            <h4 style="cursor: pointer;" onclick="app.navigateToProfile('${post.author._id}')">${post.author.username}</h4>
+            <h4 style="cursor: pointer;" onclick="app.navigateToProfile('${(post.author && post.author._id) || ''}')">${(post.author && post.author.username) || 'Deleted User'}</h4>
             <span>${postDate}</span>
           </div>
         </div>
@@ -55,7 +55,7 @@ window.ui = {
             <i class="far fa-comment"></i>
             <span>${post.comments.length}</span>
           </button>
-          ${currentUser && currentUser._id === post.author._id ? `
+          ${currentUser && post.author && currentUser._id === post.author._id ? `
             <div style="display: flex; gap: 12px; margin-left: auto; align-items: center;">
               <i class="fas fa-edit edit-btn" onclick="app.handleEditPost('${post._id}')" style="cursor: pointer; color: var(--primary);" title="Edit Post"></i>
               <i class="fas fa-trash delete-btn" onclick="app.handleDeletePost('${post._id}')" style="cursor: pointer; color: #ff4757;" title="Delete Post"></i>
@@ -80,8 +80,8 @@ window.ui = {
     return `
       <div class="comment-item" id="comment-${comment._id}" style="margin-bottom: 12px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
-          <strong style="color: var(--primary); cursor: pointer;" onclick="app.navigateToProfile('${comment.author._id || comment.author}')">
-            ${comment.author.username || 'User'}:
+          <strong style="color: var(--primary); cursor: pointer;" onclick="app.navigateToProfile('${(comment.author && (comment.author._id || comment.author)) || ''}')">
+            ${(comment.author && comment.author.username) || 'Deleted User'}:
           </strong> 
           <span class="comment-content">${comment.content}</span>
         </div>
@@ -117,7 +117,7 @@ window.ui = {
           : `<img src="${post.media || 'https://via.placeholder.com/300'}" alt="post">`
         }
         <div class="reel-info">
-          <strong style="font-size: 0.9rem;">@${post.author.username}</strong>
+          <strong style="font-size: 0.9rem;">@${(post.author && post.author.username) || 'User'}</strong>
           <div style="display: flex; gap: 12px; font-size: 0.8rem;">
             <span><i class="fas fa-heart"></i> ${post.likes.length}</span>
             <span><i class="fas fa-comment"></i> ${post.comments.length}</span>
@@ -141,11 +141,11 @@ window.ui = {
 
   renderNotification(n, currentUser) {
     let actionHtml = '';
-    const isFollowing = currentUser && currentUser.following.some(id => (id._id || id) === n.sender._id);
+    const isFollowing = currentUser && n.sender && currentUser.following.some(id => (id._id || id) === n.sender._id);
 
     if (n.type === 'follow') {
       actionHtml = `
-        <button class="btn ${isFollowing ? 'btn-outline' : 'btn-primary'}" onclick="app.handleFollow('${n.sender._id}')" style="padding: 6px 10px; font-size: 0.75rem;">
+        <button class="btn ${isFollowing ? 'btn-outline' : 'btn-primary'}" onclick="app.handleFollow('${(n.sender && n.sender._id) || ''}')" style="padding: 6px 10px; font-size: 0.75rem;">
           ${isFollowing ? 'Following' : 'Follow'}
         </button>
       `;
@@ -166,12 +166,12 @@ window.ui = {
     return `
       <div class="follow-item glass" style="margin-bottom: 8px; border: none; ${n.read ? 'opacity: 0.8;' : 'border-left: 3px solid var(--primary);'}">
         <div style="display: flex; gap: 12px; align-items: center;">
-          <div class="avatar" style="width: 40px; height: 40px; cursor: pointer;" onclick="app.navigateToProfile('${n.sender._id}')">
-            <img src="${n.sender.profilePicture || `https://ui-avatars.com/api/?name=${n.sender.username}&background=random`}" alt="${n.sender.username}">
+          <div class="avatar" style="width: 40px; height: 40px; cursor: pointer;" onclick="app.navigateToProfile('${(n.sender && n.sender._id) || ''}')">
+            <img src="${(n.sender && n.sender.profilePicture) || `https://ui-avatars.com/api/?name=${(n.sender && n.sender.username) || 'User'}&background=random`}" alt="${(n.sender && n.sender.username) || 'User'}">
           </div>
           <div>
             <p style="font-size: 0.85rem;">
-              <strong style="cursor: pointer;" onclick="app.navigateToProfile('${n.sender._id}')">${n.sender.username}</strong> 
+              <strong style="cursor: pointer;" onclick="app.navigateToProfile('${(n.sender && n.sender._id) || ''}')">${(n.sender && n.sender.username) || 'Deleted User'}</strong> 
               ${message}
             </p>
             <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(n.createdAt).toLocaleDateString()}</span>

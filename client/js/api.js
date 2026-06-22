@@ -1,4 +1,24 @@
-const API_URL = '/api';
+const getApiUrl = () => {
+  const { protocol, hostname, port } = window.location;
+  
+  // If running via file protocol
+  if (protocol === 'file:') {
+    return 'http://localhost:5001/api';
+  }
+  
+  // If running locally (localhost or 127.0.0.1)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // If not served by backend (5001) or Vite proxy (5173)
+    if (port !== '5001' && port !== '5173') {
+      return 'http://localhost:5001/api';
+    }
+  }
+  
+  // Default to relative path for same-origin (production or local server/proxy)
+  return '/api';
+};
+
+const API_URL = getApiUrl();
 
 window.api = {
   async uploadFile(file) {
