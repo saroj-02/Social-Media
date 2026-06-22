@@ -3,14 +3,19 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 
-// Load env vars — works locally (.env file) and on Render (dashboard env vars)
+// Load env vars
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 
 // Trust reverse proxy (Render, nginx, etc.)
 app.set('trust proxy', 1);
+
+// Ensure uploads directory exists (fallback for when Cloudinary is not configured)
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 // Middleware
 app.use(cors({
@@ -20,6 +25,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Serve locally uploaded files (fallback when Cloudinary not configured)
+app.use('/uploads', express.static(uploadDir));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

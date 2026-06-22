@@ -12,8 +12,50 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+// Cloudinary direct upload config (cloud_name is public — safe to embed)
+const CLOUDINARY_CLOUD_NAME = 'dohn65ehr';
+const CLOUDINARY_UPLOAD_PRESET = 'social_media_unsigned'; // unsigned preset name
+
 window.api = {
+  // Upload directly to Cloudinary from the browser (no server round-trip needed)
+  // Falls back to server upload if Cloudinary direct upload fails
   async uploadFile(file) {
+    // Try direct Cloudinary upload first (fastest, always permanent)
+    try {
+      return await this._uploadToCloudinaryDirect(file);
+    } catch (directErr) {
+      console.warn('Direct Cloudinary upload failed, trying server upload:', directErr.message);
+      // Fallback: upload through server
+      return await this._uploadViaServer(file);
+    }
+  },
+
+  // Direct browser → Cloudinary upload using unsigned preset
+  async _uploadToCloudinaryDirect(file) {
+    const isVideo = file.type.startsWith('video/');
+    const resourceType = isVideo ? 'video' : 'image';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('folder', 'social-media');
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+      { method: 'POST', body: formData }
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Cloudinary upload failed');
+    }
+
+    const result = await response.json();
+    return result.secure_url; // Always https://res.cloudinary.com/...
+  },
+
+  // Fallback: upload through our server (server must have Cloudinary configured)
+  async _uploadViaServer(file) {
     const formData = new FormData();
     formData.append('file', file);
 

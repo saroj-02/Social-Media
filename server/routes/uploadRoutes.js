@@ -19,8 +19,16 @@ router.post('/', protect, (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Cloudinary always returns a full https:// URL in req.file.path
-    const fileUrl = req.file.path;
+    let fileUrl;
+    if (req.file.path && req.file.path.startsWith('http')) {
+      // Cloudinary URL — already absolute HTTPS
+      fileUrl = req.file.path.replace(/^http:\/\//, 'https://');
+    } else {
+      // Local disk — construct absolute URL using HTTPS in production
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : (req.protocol || 'http');
+      fileUrl = `${protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    }
+
     res.json({ url: fileUrl });
   });
 });
