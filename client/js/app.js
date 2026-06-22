@@ -1134,8 +1134,9 @@ window.app = {
         <div class="glass" style="padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="app.navigateToProfile('${user._id}')">
               <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" class="avatar" style="width: 40px; height: 40px;">
           <div>
-            <strong style="display: block;">${user.username}</strong>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">${user.followers.length} followers</span>
+            <strong style="display: block;">${user.fullName || user.username}</strong>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">${user.username}</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">${user.followers.length} followers</span>
           </div>
         </div>
       `).join('');
@@ -1166,8 +1167,9 @@ window.app = {
               <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="app.navigateToProfile('${user._id}')">
                 <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" class="avatar" style="width: 40px; height: 40px;">
                 <div>
-                  <strong style="display: block;">${user.username}</strong>
-                  <span style="font-size: 0.8rem; color: var(--text-muted);">${user.followers.length} followers</span>
+                  <strong style="display: block;">${user.fullName || user.username}</strong>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">${user.username}</span>
+                  <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">${user.followers.length} followers</span>
                 </div>
               </div>
               <button class="btn ${isFollowing ? 'btn-outline' : 'btn-primary'} btn-pop" style="padding: 6px 10px; font-size: 0.75rem;" onclick="event.stopPropagation(); app.handleFollow('${user._id}')">

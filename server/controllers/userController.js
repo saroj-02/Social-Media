@@ -103,7 +103,7 @@ exports.getSuggestions = async (req, res) => {
       ]
     })
     .limit(20) // Increased limit to show more accounts
-    .select('username profilePicture followers bio');
+    .select('username fullName profilePicture followers bio');
     
     res.json(suggestions);
   } catch (error) {
@@ -114,7 +114,7 @@ exports.getSuggestions = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find({ _id: { $ne: req.user._id } })
-      .select('username profilePicture followers bio')
+      .select('username fullName profilePicture followers bio')
       .sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
@@ -130,7 +130,7 @@ exports.searchUsers = async (req, res) => {
         { username: { $regex: query, $options: 'i' } },
         { email: { $regex: query, $options: 'i' } }
       ]
-    }).select('username profilePicture bio followers');
+    }).select('username fullName profilePicture bio followers');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
