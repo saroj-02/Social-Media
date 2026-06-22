@@ -1092,7 +1092,8 @@ window.app = {
               <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" alt="${user.username}">
             </div>
             <div style="max-width: 120px; overflow: hidden;">
-              <h5 style="font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.username}</h5>
+              <h5 style="font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.fullName || user.username}</h5>
+              <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 0 0; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.username}</p>
               <span style="font-size: 0.7rem; color: var(--text-muted); display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.followers.length} followers</span>
             </div>
           </div>
