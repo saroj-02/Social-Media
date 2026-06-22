@@ -159,7 +159,8 @@ window.app = {
         document.getElementById('auth-btn-text').textContent = isLogin ? 'Sign Up' : 'Login';
         document.getElementById('auth-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
         authToggle.textContent = isLogin ? 'Login' : 'Sign up';
-        document.getElementById('username-group').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('username-group').style.display = isLogin ? 'none' : 'block';
+        document.getElementById('email-group').style.display = isLogin ? 'block' : 'none';
       });
     }
 
@@ -176,14 +177,16 @@ window.app = {
         try {
           let result;
           if (isLogin) {
-            result = await api.login({ email, password });
+            // Accept either email or username for login
+            result = await api.login({ identifier: email, password });
           } else {
-            const usernameRegex = /^@[a-zA-Z0-9_]+$/;
+            const usernameRegex = /^[a-z0-9_]+$/;
             if (!usernameRegex.test(username)) {
-              ui.showToast('Username must start with @ and contain only letters, numbers, or underscores (no spaces)', 'error');
+              ui.showToast('Username must contain only lowercase letters, numbers, or underscores (no spaces, no capital letters)', 'error');
               return;
             }
-            result = await api.register({ username, email, password });
+            // For signup we only send username and password; email is optional server-side
+            result = await api.register({ username, password });
           }
           
           localStorage.setItem('user', JSON.stringify(result));

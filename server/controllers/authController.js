@@ -7,14 +7,28 @@ const generateToken = (id) => {
 
 exports.register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    let { username, email, password } = req.body;
     
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
+    // Validate username format (lowercase, numbers, underscore only)
+    const usernameRegex = /^[a-z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ message: 'Username must contain only lowercase letters, numbers, and underscores' });
+    }
+    
+    // Add @ symbol to username
+    const displayUsername = `@${username}`;
+    
+    // If email not provided, generate a temporary one
+    if (!email) {
+      email = `${username}@aura.social`;
+    }
+    
+    const userExists = await User.findOne({ $or: [{ email }, { username: displayUsername }] });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const user = await User.create({ username, email, password });
+    const user = await User.create({ username: displayUsername, email, password });
     
     res.status(201).json({
       _id: user._id,
@@ -35,8 +49,21 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { identifier, password } = req.body;
+
+    // identifier can be email or username (with or without @)
+    if (!identifier) return res.status(400).json({ message: 'Email or username required' });
+
+    let user = null;
+    if (identifier.startsWith('@')) {
+      user = await User.findOne({ username: identifier });
+    } else {
+      user = await User.findOne({ email: identifier });
+      if (!user) {
+        // try username without @ by prepending
+        user = await User.findOne({ username: `@${identifier}` });
+      }
+    }
 
     if (user) {
       // Automatic unban check
@@ -71,10 +98,10 @@ exports.login = async (req, res) => {
           token: generateToken(user._id)
         });
       } else {
-        res.status(401).json({ message: 'Invalid email or password' });
+        res.status(401).json({ message: 'Invalid credentials' });
       }
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });

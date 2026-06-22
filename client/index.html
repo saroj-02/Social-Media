@@ -18,10 +18,10 @@
       
       <form id="auth-form">
         <div id="username-group" style="display: none; margin-bottom: 16px;">
-          <input type="text" id="username" placeholder="Username">
+          <input type="text" id="username" placeholder="Username (lowercase, numbers, _ only)" pattern="[a-z0-9_]+" required>
         </div>
-        <div style="margin-bottom: 16px;">
-          <input type="email" id="email" placeholder="Email Address" required>
+        <div id="email-group" style="margin-bottom: 16px;">
+          <input type="text" id="email" placeholder="Email or username (you can enter @username)" required>
         </div>
         <div style="margin-bottom: 24px;">
           <input type="password" id="password" placeholder="Password" required>

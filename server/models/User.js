@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
-    match: [/^@[a-zA-Z0-9_]+$/, 'Username must start with @ and contain only letters, numbers, and underscores (no spaces)']
+    match: [/^@[a-z0-9_]+$/, 'Username must start with @ and contain only lowercase letters, numbers, and underscores (no spaces)']
   },
   fullName: {
     type: String,
@@ -16,10 +16,11 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    sparse: true
   },
   password: {
     type: String,
