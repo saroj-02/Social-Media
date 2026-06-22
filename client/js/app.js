@@ -160,8 +160,8 @@ window.app = {
         document.getElementById('auth-btn-text').textContent = isLogin ? 'Sign Up' : 'Login';
         document.getElementById('auth-toggle-text').textContent = isLogin ? 'Already have an account?' : "Don't have an account?";
         authToggle.textContent = isLogin ? 'Login' : 'Sign up';
-        document.getElementById('username-group').style.display = isLogin ? 'none' : 'block';
-        document.getElementById('email-group').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('username-group').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('email-group').style.display = 'block';
       });
     }
 
