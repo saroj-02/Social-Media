@@ -10,6 +10,9 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 
+// Trust reverse proxy (e.g. Render load balancer)
+app.enable('trust proxy');
+
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {

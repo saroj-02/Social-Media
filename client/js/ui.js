@@ -17,6 +17,28 @@ window.ui = {
     });
   },
 
+  getMediaUrl(mediaPath) {
+    if (!mediaPath) return '';
+    
+    // Upgrade http://social-media-6tlu.onrender.com to HTTPS to prevent mixed content
+    if (mediaPath.startsWith('http://social-media-6tlu.onrender.com')) {
+      return mediaPath.replace(/^http:\/\//, 'https://');
+    }
+    
+    // If it is a relative path starting with /uploads or uploads
+    if (mediaPath.startsWith('/uploads') || mediaPath.startsWith('uploads')) {
+      const cleanPath = mediaPath.startsWith('/') ? mediaPath : '/' + mediaPath;
+      const { protocol, hostname } = window.location;
+      
+      // If client is running locally (file:// or localhost)
+      if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
+        return 'https://social-media-6tlu.onrender.com' + cleanPath;
+      }
+    }
+    
+    return mediaPath;
+  },
+
   renderPost(post, currentUser) {
     const isLiked = currentUser && post.likes.some(id => (id._id || id) === currentUser._id);
     const postDate = new Date(post.createdAt).toLocaleDateString();
@@ -43,8 +65,8 @@ window.ui = {
         </div>
         ${post.media ? (
           post.type === 'reel' 
-            ? `<video src="${post.media}" class="post-media" controls autoplay muted loop></video>`
-            : `<img src="${post.media}" class="post-media">`
+            ? `<video src="${this.getMediaUrl(post.media)}" class="post-media" controls autoplay muted loop></video>`
+            : `<img src="${this.getMediaUrl(post.media)}" class="post-media">`
         ) : ''}
         <div class="post-actions">
           <button class="action-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post._id}" onclick="app.handleLike('${post._id}')">
@@ -113,8 +135,8 @@ window.ui = {
           ${isReel ? 'Reel' : 'Post'}
         </div>
         ${isReel 
-          ? `<video src="${post.media}" muted loop onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>` 
-          : `<img src="${post.media || 'https://via.placeholder.com/300'}" alt="post">`
+          ? `<video src="${this.getMediaUrl(post.media)}" muted loop onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>` 
+          : `<img src="${this.getMediaUrl(post.media) || 'https://via.placeholder.com/300'}" alt="post">`
         }
         <div class="reel-info">
           <strong style="font-size: 0.9rem;">@${(post.author && post.author.username) || 'User'}</strong>
@@ -151,7 +173,7 @@ window.ui = {
       `;
     } else if (n.type === 'like' || n.type === 'comment') {
       if (n.post && n.post.media) {
-        actionHtml = `<img src="${n.post.media}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="app.showPostDetail('${n.post._id}')">`;
+        actionHtml = `<img src="${this.getMediaUrl(n.post.media)}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="app.showPostDetail('${n.post._id}')">`;
       }
     } else if (n.type === 'system') {
       actionHtml = `<i class="fas fa-info-circle" style="color: var(--primary); font-size: 1.2rem;"></i>`;
