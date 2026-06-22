@@ -91,7 +91,8 @@ window.ui = {
     const isLiked = currentUser && post.likes.some(id => (id._id || id) === currentUser._id);
     const postDate = new Date(post.createdAt).toLocaleDateString();
     const authorName = (post.author && post.author.username) || 'User';
-    const authorPic = (post.author && post.author.profilePicture) || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random`;
+    const authorNameClean = authorName.replace(/^@/, '');
+    const authorPic = (post.author && post.author.profilePicture) || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorNameClean)}&background=random`;
     const mediaUrl = post.media ? this.getMediaUrl(post.media) : '';
     const isVideo = post.type === 'reel';
 

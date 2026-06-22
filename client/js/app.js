@@ -144,7 +144,8 @@ window.app = {
 
   updateUserInfo() {
     const avatars = document.querySelectorAll('.current-user-avatar');
-    const avatarUrl = this.user.profilePicture || `https://ui-avatars.com/api/?name=${this.user.username}&background=random`;
+    const nameForAvatar = (this.user && this.user.username) ? encodeURIComponent(this.user.username.replace(/^@/, '')) : 'User';
+    const avatarUrl = this.user.profilePicture || `https://ui-avatars.com/api/?name=${nameForAvatar}&background=random`;
     avatars.forEach(img => img.src = avatarUrl);
   },
 
@@ -180,13 +181,15 @@ window.app = {
             // Accept either email or username for login
             result = await api.login({ identifier: email, password });
           } else {
-            const usernameRegex = /^[a-z0-9_]+$/;
+            // Accept optional leading @, validate lowercase letters, numbers, and underscores
+            const usernameRegex = /^@?[a-z0-9_]+$/;
             if (!usernameRegex.test(username)) {
-              ui.showToast('Username must contain only lowercase letters, numbers, or underscores (no spaces, no capital letters)', 'error');
+              ui.showToast('Username must contain only lowercase letters, numbers, or underscores (no spaces). You may include a leading @', 'error');
               return;
             }
-            // For signup we only send username and password; email is optional server-side
-            result = await api.register({ username, password });
+            const cleanUsername = username.replace(/^@/, '');
+            // Send username (cleaned), email and password to server (keeps original signup UI behavior)
+            result = await api.register({ username: cleanUsername, email, password });
           }
           
           localStorage.setItem('user', JSON.stringify(result));
@@ -602,7 +605,7 @@ window.app = {
         <div class="create-details-section">
           <div class="create-post-header">
             <div class="avatar">
-              <img src="${this.user.profilePicture || `https://ui-avatars.com/api/?name=${this.user.username}&background=random`}" alt="${this.user.username}">
+              <img src="${this.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((this.user.username||'').replace(/^@/,''))}&background=random`}" alt="${this.user.username}">
             </div>
             <h5>${this.user.username}</h5>
           </div>
@@ -851,7 +854,7 @@ window.app = {
     }
   },
 
-  navigateTo(page) {
+  navigateTo(page, options = {}) {
     document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     
@@ -865,7 +868,8 @@ window.app = {
     if (navLink) navLink.classList.add('active');
     this.currentPage = page;
 
-    if (page === 'profile') {
+    // Load profile only when not explicitly skipped. navigateToProfile will skip
+    if (page === 'profile' && !options.skipLoadProfile) {
       this.loadProfile(this.user._id);
     } else if (page === 'notifications') {
       this.loadNotifications();
@@ -879,20 +883,39 @@ window.app = {
   },
 
   async navigateToProfile(userId) {
-    this.navigateTo('profile');
+    // Guard: do nothing when userId is falsy
+    if (!userId) {
+      ui.showToast('Profile not available', 'error');
+      return;
+    }
+
+    // If already viewing this profile, avoid reloading (prevents UI glitch/vibration)
+    if (this.currentPage === 'profile' && this.currentProfileId && String(this.currentProfileId) === String(userId)) {
+      return;
+    }
+
+    // Prevent navigateTo from auto-loading the current user's profile
+    this.navigateTo('profile', { skipLoadProfile: true });
     this.loadProfile(userId);
   },
 
   async loadProfile(userId, tab = 'posts') {
     try {
+      if (!userId) {
+        ui.showToast('Profile id missing', 'error');
+        return;
+      }
+
       this.currentProfileId = userId;
       const profile = await api.getUserProfile(userId);
       this.currentProfileData = profile; // Store for list viewing
       
       document.getElementById('profile-full-name').textContent = profile.fullName || profile.username;
-      document.getElementById('profile-username').textContent = `@${profile.username}`;
+      const displayUsername = profile.username && profile.username.startsWith('@') ? profile.username : `@${profile.username}`;
+      document.getElementById('profile-username').textContent = displayUsername;
       document.getElementById('profile-bio').textContent = profile.bio || 'No bio yet.';
-      document.getElementById('profile-img').src = profile.profilePicture || `https://ui-avatars.com/api/?name=${profile.username}&background=random`;
+      const avatarName = encodeURIComponent((profile.username || '').replace(/^@/, ''));
+      document.getElementById('profile-img').src = profile.profilePicture || `https://ui-avatars.com/api/?name=${avatarName}&background=random`;
       
       document.getElementById('count-followers').textContent = profile.followers.length;
       document.getElementById('count-following').textContent = profile.following.length;
@@ -900,14 +923,15 @@ window.app = {
       // Always fetch fresh posts from API for accurate profile display
       const allPosts = await api.getPosts();
       this.posts = allPosts;
+      const uidStr = String(userId);
       const userPosts = allPosts.filter(p => {
         if (!p.author) return false;
-        const authorId = p.author._id || p.author;
+        const authorId = String(p.author._id || p.author);
         const matchesType = tab === 'reels' ? p.type === 'reel' : p.type === 'post';
-        return authorId === userId && matchesType;
+        return authorId === uidStr && matchesType;
       });
-      
-      document.getElementById('count-posts').textContent = this.posts.filter(p => p.author && (p.author._id || p.author) === userId).length;
+
+      document.getElementById('count-posts').textContent = this.posts.filter(p => p.author && String(p.author._id || p.author) === uidStr).length;
       
       const container = document.getElementById('user-posts-container');
       if (tab === 'reels') {
@@ -1065,7 +1089,7 @@ window.app = {
         <div class="follow-item">
           <div style="display: flex; gap: 12px; align-items: center; cursor: pointer;" onclick="app.navigateToProfile('${user._id}')">
             <div class="avatar" style="width: 40px; height: 40px;">
-              <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${user.username}&background=random`}" alt="${user.username}">
+              <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" alt="${user.username}">
             </div>
             <div style="max-width: 120px; overflow: hidden;">
               <h5 style="font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${user.username}</h5>
@@ -1108,7 +1132,7 @@ window.app = {
       
       const usersHTML = users.map(user => `
         <div class="glass" style="padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="app.navigateToProfile('${user._id}')">
-          <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${user.username}&background=random`}" class="avatar" style="width: 40px; height: 40px;">
+              <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" class="avatar" style="width: 40px; height: 40px;">
           <div>
             <strong style="display: block;">${user.username}</strong>
             <span style="font-size: 0.8rem; color: var(--text-muted);">${user.followers.length} followers</span>
@@ -1169,7 +1193,7 @@ window.app = {
         ${users.map(user => `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--glass-border);">
             <div style="display: flex; gap: 12px; align-items: center; cursor: pointer;" onclick="document.getElementById('modal-close').click(); app.navigateToProfile('${user._id}')">
-              <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${user.username}&background=random`}" style="width: 40px; height: 40px; border-radius: 50%;">
+              <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" style="width: 40px; height: 40px; border-radius: 50%;">
               <div>
                 <div style="font-weight: 600;">${user.username}</div>
               </div>
@@ -1380,7 +1404,7 @@ window.app = {
       container.innerHTML = users.map(user => `
         <tr style="border-bottom: 1px solid var(--glass-border);">
           <td style="padding: 12px; display: flex; align-items: center; gap: 12px;">
-            <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${user.username}&background=random`}" style="width: 32px; height: 32px; border-radius: 50%;">
+            <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" style="width: 32px; height: 32px; border-radius: 50%;">
             <div>
               <div style="font-weight: 600;">${user.username}</div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">${user.fullName || ''}</div>
@@ -1422,7 +1446,7 @@ window.app = {
       const detailsHTML = `
         <div style="text-align: left; display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-            <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${user.username}&background=random`}" style="width: 80px; height: 80px; border-radius: 50%;">
+            <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" style="width: 80px; height: 80px; border-radius: 50%;">
             <div>
               <h3 style="margin: 0;">${user.fullName || user.username}</h3>
               <p style="color: var(--primary); margin: 0;">@${user.username}</p>
