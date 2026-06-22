@@ -47,15 +47,75 @@ window.ui = {
     return mediaPath;
   },
 
+  // Beautiful placeholder shown when media fails to load
+  getMediaPlaceholderHtml(isVideo = false) {
+    return `
+      <div style="
+        width: 100%;
+        min-height: 220px;
+        background: linear-gradient(135deg, rgba(138,43,226,0.12) 0%, rgba(0,128,255,0.08) 100%);
+        border: 1.5px dashed rgba(138,43,226,0.35);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: rgba(255,255,255,0.35);
+        font-size: 0.85rem;
+        padding: 32px;
+        margin: 12px 0;
+      ">
+        <i class="fas ${isVideo ? 'fa-video-slash' : 'fa-image'}" style="font-size: 2.5rem; color: rgba(138,43,226,0.45);"></i>
+        <span style="font-weight: 600; color: rgba(255,255,255,0.5);">${isVideo ? 'Video unavailable' : 'Image unavailable'}</span>
+        <span style="font-size: 0.73rem; text-align: center; max-width: 220px; line-height: 1.5; color: rgba(255,255,255,0.3);">This media was stored temporarily and is no longer available</span>
+      </div>
+    `;
+  },
+
   renderPost(post, currentUser) {
     const isLiked = currentUser && post.likes.some(id => (id._id || id) === currentUser._id);
     const postDate = new Date(post.createdAt).toLocaleDateString();
-    
+    const authorName = (post.author && post.author.username) || 'User';
+    const authorPic = (post.author && post.author.profilePicture) || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random`;
+    const mediaUrl = post.media ? this.getMediaUrl(post.media) : '';
+    const isVideo = post.type === 'reel';
+
+    // Build the media HTML with onerror fallback
+    let mediaHtml = '';
+    if (post.media) {
+      if (isVideo) {
+        mediaHtml = `
+          <div class="post-media-wrapper" id="media-wrapper-${post._id}">
+            <video
+              src="${mediaUrl}"
+              class="post-media"
+              controls autoplay muted loop
+              onerror="ui.handleMediaError('${post._id}', true)"
+            ></video>
+          </div>`;
+      } else {
+        mediaHtml = `
+          <div class="post-media-wrapper" id="media-wrapper-${post._id}">
+            <img
+              src="${mediaUrl}"
+              class="post-media"
+              alt="Post image"
+              onerror="ui.handleMediaError('${post._id}', false)"
+            >
+          </div>`;
+      }
+    }
+
     return `
       <div class="post-card glass" id="post-${post._id}" data-id="${post._id}">
         <div class="post-header">
           <div class="avatar">
-            <img src="${(post.author && post.author.profilePicture) || `https://ui-avatars.com/api/?name=${(post.author && post.author.username) || 'User'}&background=random`}" alt="${(post.author && post.author.username) || 'User'}">
+            <img
+              src="${authorPic}"
+              alt="${authorName}"
+              onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random'"
+            >
           </div>
           <div class="post-info">
             <h4 style="cursor: pointer;" onclick="app.navigateToProfile('${(post.author && post.author._id) || ''}')">${(post.author && post.author.username) || 'Deleted User'}</h4>
@@ -71,11 +131,7 @@ window.ui = {
         <div class="post-content">
           ${this.formatContent(post.content)}
         </div>
-        ${post.media ? (
-          post.type === 'reel' 
-            ? `<video src="${this.getMediaUrl(post.media)}" class="post-media" controls autoplay muted loop></video>`
-            : `<img src="${this.getMediaUrl(post.media)}" class="post-media">`
-        ) : ''}
+        ${mediaHtml}
         <div class="post-actions">
           <button class="action-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post._id}" onclick="app.handleLike('${post._id}')">
             <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
@@ -105,13 +161,22 @@ window.ui = {
     `;
   },
 
+  // Called by onerror on broken post media — replaces wrapper with a styled placeholder
+  handleMediaError(postId, isVideo) {
+    const wrapper = document.getElementById(`media-wrapper-${postId}`);
+    if (wrapper) {
+      wrapper.innerHTML = this.getMediaPlaceholderHtml(isVideo);
+    }
+  },
+
   renderComment(comment, currentUser) {
     const isOwner = currentUser && comment.author && (comment.author._id === currentUser._id || comment.author === currentUser._id);
+    const authorName = (comment.author && comment.author.username) || 'Deleted User';
     return `
       <div class="comment-item" id="comment-${comment._id}" style="margin-bottom: 12px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: flex-start;">
         <div>
           <strong style="color: var(--primary); cursor: pointer;" onclick="app.navigateToProfile('${(comment.author && (comment.author._id || comment.author)) || ''}')">
-            ${(comment.author && comment.author.username) || 'Deleted User'}:
+            ${authorName}:
           </strong> 
           <span class="comment-content">${comment.content}</span>
         </div>
@@ -136,6 +201,11 @@ window.ui = {
 
   renderGridItem(post) {
     const isReel = post.type === 'reel';
+    const mediaUrl = this.getMediaUrl(post.media);
+    const authorName = (post.author && post.author.username) || 'Post';
+    // Purple gradient placeholder thumbnail (generated as SVG data URI)
+    const placeholderUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&size=300&background=8a2be2&color=fff&bold=true`;
+    
     return `
       <div class="grid-item" onclick="app.showPostDetail('${post._id}')">
         <div class="reel-badge">
@@ -143,11 +213,19 @@ window.ui = {
           ${isReel ? 'Reel' : 'Post'}
         </div>
         ${isReel 
-          ? `<video src="${this.getMediaUrl(post.media)}" muted loop onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;"></video>` 
-          : `<img src="${this.getMediaUrl(post.media) || 'https://via.placeholder.com/300'}" alt="post">`
+          ? `<video src="${mediaUrl}" muted loop
+              onmouseover="this.play()"
+              onmouseout="this.pause(); this.currentTime=0;"
+              onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,rgba(138,43,226,0.25),rgba(0,128,255,0.15));\\'><i class=\\'fas fa-video-slash\\' style=\\'font-size:1.8rem;color:rgba(255,255,255,0.3);\\'></i><span style=\\'font-size:0.65rem;color:rgba(255,255,255,0.3);\\'>Unavailable</span></div>'"
+            ></video>`
+          : `<img
+              src="${mediaUrl || placeholderUrl}"
+              alt="post"
+              onerror="this.onerror=null;this.src='${placeholderUrl}'"
+            >`
         }
         <div class="reel-info">
-          <strong style="font-size: 0.9rem;">@${(post.author && post.author.username) || 'User'}</strong>
+          <strong style="font-size: 0.9rem;">@${authorName}</strong>
           <div style="display: flex; gap: 12px; font-size: 0.8rem;">
             <span><i class="fas fa-heart"></i> ${post.likes.length}</span>
             <span><i class="fas fa-comment"></i> ${post.comments.length}</span>
@@ -172,6 +250,8 @@ window.ui = {
   renderNotification(n, currentUser) {
     let actionHtml = '';
     const isFollowing = currentUser && n.sender && currentUser.following.some(id => (id._id || id) === n.sender._id);
+    const senderName = (n.sender && n.sender.username) || 'User';
+    const senderPic = (n.sender && n.sender.profilePicture) || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
 
     if (n.type === 'follow') {
       actionHtml = `
@@ -181,7 +261,9 @@ window.ui = {
       `;
     } else if (n.type === 'like' || n.type === 'comment') {
       if (n.post && n.post.media) {
-        actionHtml = `<img src="${this.getMediaUrl(n.post.media)}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="app.showPostDetail('${n.post._id}')">`;
+        const mediaUrl = this.getMediaUrl(n.post.media);
+        const fallbackUrl = `https://ui-avatars.com/api/?name=Post&size=40&background=8a2be2&color=fff`;
+        actionHtml = `<img src="${mediaUrl}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="app.showPostDetail('${n.post._id}')" onerror="this.onerror=null;this.src='${fallbackUrl}'">`;
       }
     } else if (n.type === 'system') {
       actionHtml = `<i class="fas fa-info-circle" style="color: var(--primary); font-size: 1.2rem;"></i>`;
@@ -197,7 +279,11 @@ window.ui = {
       <div class="follow-item glass" style="margin-bottom: 8px; border: none; ${n.read ? 'opacity: 0.8;' : 'border-left: 3px solid var(--primary);'}">
         <div style="display: flex; gap: 12px; align-items: center;">
           <div class="avatar" style="width: 40px; height: 40px; cursor: pointer;" onclick="app.navigateToProfile('${(n.sender && n.sender._id) || ''}')">
-            <img src="${(n.sender && n.sender.profilePicture) || `https://ui-avatars.com/api/?name=${(n.sender && n.sender.username) || 'User'}&background=random`}" alt="${(n.sender && n.sender.username) || 'User'}">
+            <img
+              src="${senderPic}"
+              alt="${senderName}"
+              onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random'"
+            >
           </div>
           <div>
             <p style="font-size: 0.85rem;">
