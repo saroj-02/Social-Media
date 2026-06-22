@@ -1150,17 +1150,36 @@ window.app = {
   async loadExplore(type) {
     try {
       const container = document.getElementById('explore-grid');
-      if (type === 'reels' && container) container.innerHTML = ui.renderReelSkeleton();
-      
-      const posts = await api.getPosts();
+      if (!container) return;
+      if (type === 'reels') {
+        container.className = 'instagram-grid';
+        container.innerHTML = ui.renderReelSkeleton();
+      }
       
       if (type === 'people') {
-        container.className = 'main-content';
         const users = await api.getAllUsers();
-        this.renderSuggestions(users);
+        container.className = 'main-content';
+        container.innerHTML = users.map(user => {
+          const isFollowing = this.user && this.user.following.some(id => (id._id || id) === user._id);
+          return `
+            <div class="glass" style="padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="app.navigateToProfile('${user._id}')">
+                <img src="${user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent((user.username||'').replace(/^@/,''))}&background=random`}" class="avatar" style="width: 40px; height: 40px;">
+                <div>
+                  <strong style="display: block;">${user.username}</strong>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">${user.followers.length} followers</span>
+                </div>
+              </div>
+              <button class="btn ${isFollowing ? 'btn-outline' : 'btn-primary'} btn-pop" style="padding: 6px 10px; font-size: 0.75rem;" onclick="event.stopPropagation(); app.handleFollow('${user._id}')">
+                ${isFollowing ? 'Following' : 'Follow'}
+              </button>
+            </div>
+          `;
+        }).join('');
         return;
       }
 
+      const posts = await api.getPosts();
       const filtered = posts.filter(p => type === 'reels' ? p.type === 'reel' : p.type === 'post');
       container.className = 'instagram-grid';
       container.innerHTML = filtered.map(p => ui.renderGridItem(p)).join('');
