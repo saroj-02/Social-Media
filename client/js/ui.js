@@ -2,11 +2,25 @@ window.ui = {
   showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.style.background = type === 'success' ? 'var(--gradient)' : '#ff4757';
+    if (type === 'success') {
+      toast.style.background = 'var(--gradient)';
+    } else if (type === 'error') {
+      toast.style.background = '#ff4757';
+    } else if (type === 'info') {
+      toast.style.background = 'linear-gradient(135deg, #1a73e8, #0d47a1)';
+    }
     toast.style.transform = 'translateY(0)';
-    setTimeout(() => {
-      toast.style.transform = 'translateY(150%)';
-    }, 3000);
+    // Info toasts stay until replaced; others auto-hide after 3s
+    if (type !== 'info') {
+      setTimeout(() => {
+        toast.style.transform = 'translateY(150%)';
+      }, 3000);
+    }
+  },
+
+  hideToast() {
+    const toast = document.getElementById('toast');
+    if (toast) toast.style.transform = 'translateY(150%)';
   },
 
   formatContent(content) {

@@ -214,9 +214,9 @@ window.app = {
           
           let mediaUrl = '';
           if (mediaFile) {
-            ui.showToast('Uploading media...', 'info');
+            ui.showToast('Uploading to Cloudinary...', 'info');
             mediaUrl = await api.uploadFile(mediaFile);
-            ui.showToast('Media uploaded! Publishing post...', 'success');
+            ui.hideToast();
           }
 
           const post = await api.createPost({ content, type, media: mediaUrl });
@@ -231,7 +231,8 @@ window.app = {
           this._prependPostToFeed(post);
           ui.showToast('Post published! ✓');
         } catch (error) {
-          ui.showToast(error.message, 'error');
+          ui.hideToast();
+          ui.showToast(error.message || 'Upload failed. Please try again.', 'error');
         } finally {
           submitPost.disabled = false;
           submitPost.textContent = 'Post';
@@ -656,8 +657,9 @@ window.app = {
       try {
         let mediaUrl = '';
         if (mediaFile) {
-          ui.showToast('Uploading...', 'info');
+          ui.showToast('Uploading to Cloudinary...', 'info');
           mediaUrl = await api.uploadFile(mediaFile);
+          ui.hideToast();
         }
 
         // Combine content and location for now (as the backend might not support location field yet)
@@ -674,7 +676,8 @@ window.app = {
         ui.showToast('Post shared! ✓');
         return true;
       } catch (error) {
-        ui.showToast(error.message, 'error');
+        ui.hideToast();
+        ui.showToast(error.message || 'Upload failed. Please try again.', 'error');
         return false;
       }
     }, true);
