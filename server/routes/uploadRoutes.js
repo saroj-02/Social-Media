@@ -19,8 +19,10 @@ router.post('/', protect, (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Cloudinary returns the URL directly in req.file.path
-    const fileUrl = req.file.path;
+    // If it's a Cloudinary URL, use it directly. Otherwise, construct the local absolute URL.
+    const fileUrl = req.file.path.startsWith('http')
+      ? req.file.path
+      : `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.json({ url: fileUrl });
   });
 });

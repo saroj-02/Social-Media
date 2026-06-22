@@ -1,20 +1,12 @@
 const getApiUrl = () => {
-  const { protocol, hostname, port } = window.location;
+  const { protocol, hostname } = window.location;
   
-  // If running via file protocol
-  if (protocol === 'file:') {
-    return 'http://localhost:5001/api';
+  // If running locally (either file:// or localhost/127.0.0.1)
+  if (protocol === 'file:' || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'https://social-media-6tlu.onrender.com/api';
   }
   
-  // If running locally (localhost or 127.0.0.1)
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    // If not served by backend (5001) or Vite proxy (5173)
-    if (port !== '5001' && port !== '5173') {
-      return 'http://localhost:5001/api';
-    }
-  }
-  
-  // Default to relative path for same-origin (production or local server/proxy)
+  // Default to relative path for same-origin production
   return '/api';
 };
 
@@ -63,6 +55,12 @@ window.api = {
       const response = await fetch(`${API_URL}${endpoint}`, config);
       const result = await response.json();
       if (!response.ok) {
+        if (response.status === 401 && isProtected) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          window.location.reload();
+          return;
+        }
         if (response.status === 403 && result.isBanned) {
           window.dispatchEvent(new CustomEvent('user-banned', { detail: result }));
         }
