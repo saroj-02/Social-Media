@@ -850,16 +850,22 @@ window.app = {
         container.innerHTML = userPosts.map(p => ui.renderPost(p, this.user)).join('');
       }
       
-      // Follow button logic
+      // Edit / Follow button visibility logic
+      const editProfileBtn = document.getElementById('edit-profile-btn');
       const followBtn = document.getElementById('follow-btn');
-      if (this.user && this.user._id !== userId) {
-        followBtn.style.display = 'block';
-        const isFollowing = profile.followers.some(f => (f._id || f) === this.user._id);
-        followBtn.textContent = isFollowing ? 'Unfollow' : 'Follow';
-        followBtn.className = isFollowing ? 'btn btn-outline' : 'btn btn-primary';
-        followBtn.onclick = () => this.handleFollow(userId);
+      
+      if (this.user && this.user._id === userId) {
+        if (editProfileBtn) editProfileBtn.style.display = 'block';
+        if (followBtn) followBtn.style.display = 'none';
       } else {
-        followBtn.style.display = 'none';
+        if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (followBtn) {
+          followBtn.style.display = 'block';
+          const isFollowing = profile.followers.some(f => (f._id || f) === this.user._id);
+          followBtn.textContent = isFollowing ? 'Unfollow' : 'Follow';
+          followBtn.className = isFollowing ? 'btn btn-outline' : 'btn btn-primary';
+          followBtn.onclick = () => this.handleFollow(userId);
+        }
       }
     } catch (error) {
       ui.showToast(error.message, 'error');
