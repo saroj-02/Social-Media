@@ -2,7 +2,8 @@ window.app = {
   user: null,
   currentPage: 'home',
   currentProfileId: null,
-  posts: [], // Cache for optimistic updates
+  posts: [], // In-memory cache
+  _CACHE_KEY: 'aura_posts_cache',
 
   async init() {
     this.checkAuth();
@@ -215,18 +216,20 @@ window.app = {
           if (mediaFile) {
             ui.showToast('Uploading media...', 'info');
             mediaUrl = await api.uploadFile(mediaFile);
+            ui.showToast('Media uploaded! Publishing post...', 'success');
           }
 
           const post = await api.createPost({ content, type, media: mediaUrl });
           
-          // Clear inputs
+          // Clear inputs immediately
           document.getElementById('post-input').value = '';
           mediaInput.value = '';
           document.getElementById('media-preview-container').style.display = 'none';
           document.getElementById('media-preview-content').innerHTML = '';
           
-          ui.showToast('Post created!');
-          this.loadFeed();
+          // Optimistic: prepend post instantly without waiting for a full reload
+          this._prependPostToFeed(post);
+          ui.showToast('Post published! ✓');
         } catch (error) {
           ui.showToast(error.message, 'error');
         } finally {
@@ -420,13 +423,58 @@ window.app = {
     }
   },
 
+  // Save posts to localStorage cache
+  _savePostsCache(posts) {
+    try {
+      localStorage.setItem(this._CACHE_KEY, JSON.stringify(posts.slice(0, 50)));
+    } catch (e) { /* quota full - ignore */ }
+  },
+
+  // Load posts from localStorage cache
+  _loadPostsCache() {
+    try {
+      const raw = localStorage.getItem(this._CACHE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  },
+
   async loadFeed() {
+    const container = document.getElementById('feed-container');
+    if (!container) return;
+
+    // 1. Show cached posts INSTANTLY (stale-while-revalidate)
+    const cached = this._loadPostsCache();
+    if (cached && cached.length > 0) {
+      this.posts = cached;
+      this.renderPosts('feed-container', cached);
+    } else {
+      // Show skeleton loaders while fetching
+      container.innerHTML = Array(3).fill(0).map(() => `
+        <div class="post-card glass" style="min-height:160px;">
+          <div class="post-header">
+            <div class="avatar" style="background:rgba(255,255,255,0.06);border-radius:50%;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+              <div style="height:12px;width:120px;background:rgba(255,255,255,0.07);border-radius:6px;"></div>
+              <div style="height:10px;width:80px;background:rgba(255,255,255,0.05);border-radius:6px;"></div>
+            </div>
+          </div>
+          <div style="height:14px;width:80%;background:rgba(255,255,255,0.06);border-radius:6px;margin:12px 0 8px;"></div>
+          <div style="height:14px;width:60%;background:rgba(255,255,255,0.04);border-radius:6px;"></div>
+        </div>
+      `).join('');
+    }
+
+    // 2. Fetch fresh data from server in background
     try {
       const posts = await api.getPosts();
       this.posts = posts;
+      this._savePostsCache(posts);
       this.renderPosts('feed-container', posts);
     } catch (error) {
       console.error('Failed to load feed:', error);
+      if (!cached) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:40px;">Failed to load posts. Check your connection.</p>';
+      }
     }
   },
 
@@ -434,6 +482,20 @@ window.app = {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = posts.map(post => ui.renderPost(post, this.user)).join('');
+  },
+
+  // Immediately prepend a freshly created post to the top of the feed (no API round-trip)
+  _prependPostToFeed(post) {
+    const container = document.getElementById('feed-container');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.innerHTML = ui.renderPost(post, this.user);
+    const postEl = div.firstElementChild;
+    postEl.style.animation = 'fadeIn 0.4s ease';
+    container.prepend(postEl);
+    // Also update cache
+    this.posts = [post, ...this.posts];
+    this._savePostsCache(this.posts);
   },
 
   // Optimistic Updates Logic
@@ -601,14 +663,15 @@ window.app = {
         // Combine content and location for now (as the backend might not support location field yet)
         const finalContent = location ? `${content}\n\n📍 ${location}` : content;
 
-        await api.createPost({ 
+        const post = await api.createPost({ 
           content: finalContent, 
           type, 
           media: mediaUrl,
           music: selectedMusic 
         });
-        ui.showToast('Post shared successfully!');
-        this.loadFeed();
+        // Optimistic: show post immediately at top of feed
+        this._prependPostToFeed(post);
+        ui.showToast('Post shared! ✓');
         return true;
       } catch (error) {
         ui.showToast(error.message, 'error');

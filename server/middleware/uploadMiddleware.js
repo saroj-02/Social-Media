@@ -1,45 +1,32 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-let storage;
+// Validate Cloudinary configuration at startup
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && 
-                      process.env.CLOUDINARY_API_KEY && 
-                      process.env.CLOUDINARY_API_SECRET;
-
-if (useCloudinary) {
-  const { CloudinaryStorage } = require('multer-storage-cloudinary');
-  const cloudinary = require('../config/cloudinary');
-  
-  storage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-      const isVideo = file.mimetype.startsWith('video/');
-      return {
-        folder: 'social-media',
-        resource_type: isVideo ? 'video' : 'image',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'avi', 'webm'],
-        transformation: isVideo ? [] : [{ quality: 'auto', fetch_format: 'auto' }],
-      };
-    },
-  });
+if (!cloudName || !apiKey || !apiSecret) {
+  console.error('⚠️  CLOUDINARY credentials missing! Media uploads will fail.');
+  console.error('   Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
 } else {
-  // Fallback to local disk storage
-  storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      const uploadDir = path.join(__dirname, '..', 'uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-  });
+  console.log(`✅ Cloudinary ready: cloud=${cloudName}`);
 }
+
+// Always use Cloudinary — permanent CDN, survives server restarts
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const isVideo = file.mimetype.startsWith('video/');
+    return {
+      folder: 'social-media',
+      resource_type: isVideo ? 'video' : 'image',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'avi', 'webm'],
+      transformation: isVideo ? [] : [{ quality: 'auto', fetch_format: 'auto' }],
+    };
+  },
+});
 
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
